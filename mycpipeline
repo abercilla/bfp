@@ -1,0 +1,72 @@
+/*MYC CALLS*/
+
+select first_name ||' ' || last_name as "Name"
+        , wx.report_week
+        , count (*) myc_calls
+from my_state_van.coord20_myc_002_contacts cc
+   join states_fl_reporting.week_xref wx
+     on wx.report_date = (cc.datetime_canvassed - interval '4 hour')::date
+     left join my_state_van.users vu on cc.canvassed_by_user_id = vu.user_id 
+   
+   where contact_type_name = 'Phone'
+   and report_week = (select report_week from states_fl_reporting.week_xref where report_date = getdate()::date - 1)
+   group by 1,2;
+   
+   
+   /* PEOPLE COMPLETED*/
+select fo_name, count(DISTINCT MyC_Van_ID) as "People Completed"
+from my_state_van.coord20_myc_003_event_shifts
+where event_date between getdate()::date - 7 
+and getdate()::date and current_shift_status_name ='Completed'
+and event_name = 'FL_GOTV_VPH_event_main'
+group by 1 
+order by 1;
+
+
+/* NEW: matches event signups to canvass attempts  */
+
+select es.fo_name
+   , count (DISTINCT es.myc_van_id) as "people_recruited"
+    from my_state_van.coord20_myc_003_event_shifts es
+    join my_state_van.coord20_myc_002_contacts c
+      on c.national_myc_van_id = es.national_myc_van_id
+     where es.initial_event_signup_date = c.date_canvassed  
+     and  es.national_myc_van_id = c.national_myc_van_id
+     and  es.initial_event_signup_date between getdate()::date - 7 and getdate()::date
+          and event_name  = 'FL_GOTV_VPH_event_main'
+     and c.result_short_name = 'Canvassed'
+     and c.contact_type_name = 'Phone'
+     group by 1
+     order by 1;
+     
+ /*people reshifted*/
+ 
+     with volunteers_who_recently_completed_shifts as 
+(select distinct myc_van_id
+
+    from my_state_van.coord20_myc_003_event_shifts
+    where current_shift_status_name = 'Completed'
+    and event_date between getdate()::date - 7 and getdate()::date
+ and event_name = 'FL_GOTV_VPH_event_main'
+)
+
+select fo_name, count(distinct myc_van_id) as "People Reshifted"
+from my_state_van.coord20_myc_003_event_shifts
+where event_date >= getdate()::date 
+and current_shift_status_name not in ('Completed','Declined','Cancelled','Cancel-Web')
+and myc_van_id in (select * from volunteers_who_recently_completed_shifts)
+and event_name = 'FL_GOTV_VPH_event_main'
+group by 1
+order by 1;
+
+
+/*runs every Friday 
+
+number of shifts (all statuses) per FO turf where event date is in the last reporting week*/
+
+select fo_name, count (event_shift_id) as "Shifts Scheduled"
+from my_state_van.coord20_myc_003_event_shifts
+where event_date between getdate()::date - 7 and getdate()::date
+and event_name = 'FL_GOTV_VPH_event_main'
+group by 1 
+order by 1;
