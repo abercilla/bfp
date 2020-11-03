@@ -1,0 +1,19 @@
+select location_name as "VPH Name", 
+shift_datetime_offset_begin as "Shift Time",
+count(DISTINCT MyC_Van_ID) as "Vols Scheduled", 
+
+case when shift_datetime_offset_begin between '2020-09-25 00:00:00' and '2020-10-01 23:00:00' then 'Week 4' 
+when shift_datetime_offset_begin between '2020-10-02 00:00:00' and '2020-10-08 23:00:00' then 'Week 3' 
+when shift_datetime_offset_begin between '2020-10-09 00:00:00' and '2020-10-15 23:00:00' then 'Week 2' 
+when shift_datetime_offset_begin between '2020-10-16 00:00:00' and '2020-10-22 23:00:00' then 'Week 1' 
+when shift_datetime_offset_begin between '2020-10-23 00:00:00' and '2020-10-30 23:00:00' then 'Week 0' 
+when shift_datetime_offset_begin between '2020-10-31 00:00:00' and '2020-11-03 23:00:00' then 'Final Four'
+                                          end week
+                                          
+from my_state_van.coord20_myc_003_event_shifts
+where event_name = 'FL_GOTV_VPH_event_main'
+and event_type = 'Phone Bank'
+and current_shift_status_name not in ('Cancelled', 'Declined', 'Cancel-Web')
+and event_role_name not in ('Host')
+group by 1,2 
+order by 1;
