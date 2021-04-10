@@ -1,3 +1,6 @@
+# Number of volunteers scheduled per staging location per shift time
+# Shift dates are also grouped into the last 5 weeks of the campaign 
+
 select location_name as "VPH Name", 
 shift_datetime_offset_begin as "Shift Time",
 count(DISTINCT MyC_Van_ID) as "Vols Scheduled", 
